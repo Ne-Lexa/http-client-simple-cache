@@ -46,9 +46,7 @@ final class HashUtilTest extends TestCase
             'callable' => $this->calcHash($callable),
             'callableStatic' => $this->calcHash($callableStatic),
             '[$this, callableMethod]' => $this->calcHash([$this, 'callableMethod']),
-            '[__CLASS__, callableMethod]' => $this->calcHash([__CLASS__, 'callableMethod']),
             '[__CLASS__, callableStaticMethod]' => $this->calcHash([__CLASS__, 'callableStaticMethod']),
-            '__CLASS__::callableMethod' => $this->calcHash(__CLASS__ . '::callableMethod'),
             '__CLASS__::callableStaticMethod' => $this->calcHash(__CLASS__ . '::callableStaticMethod'),
             'trim' => $this->calcHash('trim'),
             '__NAMESPACE__.\callableFunction' => $this->calcHash(__NAMESPACE__ . '\callableFunction'),
@@ -61,8 +59,6 @@ final class HashUtilTest extends TestCase
             $this->assertRegExp('/^[\da-f]{8}$/', $hash);
         }
 
-        $this->assertSame($hashes['[$this, callableMethod]'], $hashes['[__CLASS__, callableMethod]']);
-        $this->assertSame($hashes['[$this, callableMethod]'], $hashes['__CLASS__::callableMethod']);
         $this->assertSame($hashes['[__CLASS__, callableStaticMethod]'], $hashes['__CLASS__::callableStaticMethod']);
     }
 
