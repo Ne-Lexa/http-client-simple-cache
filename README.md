@@ -6,7 +6,7 @@ Guzzle-based HTTP Client with the ability to customize caching of the processed 
 ![PHP from Packagist](https://img.shields.io/packagist/php-v/nelexa/http-client-simple-cache.svg?style=popout&color=yellowgreen)
 [![License](https://img.shields.io/packagist/l/nelexa/http-client-simple-cache.svg?style=popout&color=01f176)](https://packagist.org/packages/nelexa/http-client-simple-cache)
 
-![Travis build](https://img.shields.io/travis/Ne-Lexa/http-client-simple-cache/master.svg?label=Travis&style=popout)
+[![Travis Build Status](https://img.shields.io/travis/Ne-Lexa/http-client-simple-cache/master.svg?label=Travis&style=popout)](https://travis-ci.org/Ne-Lexa/http-client-simple-cache)
 ![Scrutinizer build](https://img.shields.io/scrutinizer/build/g/Ne-Lexa/http-client-simple-cache/master.svg?label=Scrutinizer&style=popout)
 ![Scrutinizer code quality](https://img.shields.io/scrutinizer/quality/g/Ne-Lexa/http-client-simple-cache/master.svg?style=popout)
 ![Scrutinizer coverage](https://img.shields.io/scrutinizer/coverage/g/Ne-Lexa/http-client-simple-cache/master.svg?style=popout)

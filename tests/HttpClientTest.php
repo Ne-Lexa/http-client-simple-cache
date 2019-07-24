@@ -184,7 +184,7 @@ final class HttpClientTest extends TestCase
 
     public function testCacheResponse(): void
     {
-        $cache = new Psr16Cache(new FilesystemAdapter('test.cache.response.v' . uniqid('', true)));
+        $cache = new Psr16Cache(new FilesystemAdapter('test.cache.response.v' . time()));
 
         $requestCacheUUID = static function () use ($cache) {
             $client = new HttpClient([], $cache);
@@ -204,9 +204,7 @@ final class HttpClientTest extends TestCase
         };
 
         $uuid = $requestCacheUUID();
-        for ($i = 0; $i < 100; $i++) {
-            $this->assertSame($requestCacheUUID(), $uuid);
-        }
+        $this->assertSame($requestCacheUUID(), $uuid);
 
         sleep(2);
         $this->assertNotSame($requestCacheUUID(), $uuid);
