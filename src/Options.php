@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Nelexa\HttpClient;
@@ -16,13 +17,12 @@ use GuzzleHttp\RequestOptions;
 class Options
 {
     /**
-     * handler_response: callback(\Psr\Http\Message\RequestInterface $request, \Psr\Http\Message\ResponseInterface $response).
+     * handler_response: callback(\Psr\Http\Message\RequestInterface $request, \Psr\Http\Message\ResponseInterface
+     * $response).
      */
     public const HANDLER_RESPONSE = 'handler_response';
 
-    /**
-     * 'cache_ttl': \DateInterval|null if null cache is disable.
-     */
+    /** 'cache_ttl': \DateInterval|null if null cache is disable. */
     public const CACHE_TTL = 'cache_ttl';
 
     /**
@@ -108,9 +108,7 @@ class Options
      */
     public const DECODE_CONTENT = RequestOptions::DECODE_CONTENT;
 
-    /**
-     * delay: (int) The amount of time to delay before sending in milliseconds.
-     */
+    /** delay: (int) The amount of time to delay before sending in milliseconds. */
     public const DELAY = RequestOptions::DELAY;
 
     /**
@@ -264,13 +262,9 @@ class Options
      */
     public const READ_TIMEOUT = RequestOptions::READ_TIMEOUT;
 
-    /**
-     * version: (float) Specifies the HTTP protocol version to attempt to use.
-     */
+    /** version: (float) Specifies the HTTP protocol version to attempt to use. */
     public const VERSION = RequestOptions::VERSION;
 
-    /**
-     * force_ip_resolve: (bool) Force client to use only ipv4 or ipv6 protocol.
-     */
+    /** force_ip_resolve: (bool) Force client to use only ipv4 or ipv6 protocol. */
     public const FORCE_IP_RESOLVE = RequestOptions::FORCE_IP_RESOLVE;
 }

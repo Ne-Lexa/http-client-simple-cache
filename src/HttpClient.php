@@ -1,5 +1,5 @@
 <?php
-/** @noinspection PhpDocRedundantThrowsInspection */
+
 declare(strict_types=1);
 
 namespace Nelexa\HttpClient;
@@ -9,25 +9,21 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
-use function GuzzleHttp\Promise\each_limit_all;
 use Nelexa\HttpClient\Utils\HashUtil;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\SimpleCache\CacheInterface;
+use function GuzzleHttp\Promise\each_limit_all;
 
 /**
  * HTTP client.
  */
 class HttpClient extends Client
 {
-    /**
-     * handler: (HandlerStack) Handler stack.
-     */
+    /** handler: (HandlerStack) Handler stack. */
     public const OPTION_HANDLER = 'handler';
 
-    /**
-     * retry_limit: (int) number of attempts with HTTP error (except 404).
-     */
+    /** retry_limit: (int) number of attempts with HTTP error (except 404). */
     public const OPTION_RETRY_LIMIT = 'retry_limit';
 
     /** @var string Cache key default namespace */
@@ -51,8 +47,10 @@ class HttpClient extends Client
 
         if (isset($config[self::OPTION_HANDLER])) {
             if (!$config[self::OPTION_HANDLER] instanceof HandlerStack) {
-                throw new \InvalidArgumentException('Invalid option "' . self::OPTION_HANDLER .
-                    '". Expected ' . HandlerStack::class);
+                throw new \InvalidArgumentException(
+                    'Invalid option "' . self::OPTION_HANDLER .
+                    '". Expected ' . HandlerStack::class
+                );
             }
             $handlerStack = $config[self::OPTION_HANDLER];
             unset($config[self::OPTION_HANDLER]);
@@ -76,16 +74,19 @@ class HttpClient extends Client
             $handlerStack->push(self::handlerRetryMiddleware($config[self::OPTION_RETRY_LIMIT]));
         }
 
-        $config = array_replace_recursive([
-            self::OPTION_HANDLER => $handlerStack,
-            Options::HEADERS => [
-                'User-Agent' => 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0',
-                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language' => 'en',
-                'Accept-Encoding' => 'gzip, deflate',
-                'Connection' => 'keep-alive',
+        $config = array_replace_recursive(
+            [
+                self::OPTION_HANDLER => $handlerStack,
+                Options::HEADERS => [
+                    'User-Agent' => 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0',
+                    'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language' => 'en',
+                    'Accept-Encoding' => 'gzip, deflate',
+                    'Connection' => 'keep-alive',
+                ],
             ],
-        ], $config);
+            $config
+        );
         parent::__construct($config);
     }
 
@@ -130,6 +131,7 @@ class HttpClient extends Client
                     }
 
                     $value = $this->cache->get($options[Options::CACHE_KEY]);
+
                     if ($value !== null) {
                         return $value;
                     }
@@ -143,6 +145,7 @@ class HttpClient extends Client
                                 $request,
                                 $response
                             );
+
                             if ($cacheSupport && $result !== null) {
                                 $ttl = $options[Options::CACHE_TTL];
                                 $this->cache->set(
@@ -170,9 +173,10 @@ class HttpClient extends Client
         return Middleware::retry(
             static function (
                 $retries,
-/** @noinspection PhpUnusedParameterInspection */ RequestInterface $request,
-                ResponseInterface $response = null,
-                RequestException $exception = null
+                /** @noinspection PhpUnusedParameterInspection */
+                RequestInterface $request,
+                ?ResponseInterface $response = null,
+                ?RequestException $exception = null
             ) use ($retryLimit) {
                 // retry decider
                 if ($retries >= $retryLimit) {
@@ -226,7 +230,8 @@ class HttpClient extends Client
     public function setHttpHeader(string $key, ?string $value): self
     {
         $config = $this->getConfig();
-        if (null === $value) {
+
+        if ($value === null) {
             if (isset($config[Options::HEADERS][$key])) {
                 unset($config[Options::HEADERS][$key]);
                 $this->setConfig($config);
@@ -246,7 +251,7 @@ class HttpClient extends Client
      */
     public function setCacheTtl($ttl): self
     {
-        if (null !== $ttl && !\is_int($ttl) && !$ttl instanceof \DateInterval) {
+        if ($ttl !== null && !\is_int($ttl) && !$ttl instanceof \DateInterval) {
             throw new \InvalidArgumentException('Invalid cache ttl value. Supported \DateInterval, int and null.');
         }
         $config = $this->getConfig();
@@ -319,12 +324,17 @@ class HttpClient extends Client
     public function requestAsyncPool(string $method, iterable $urls, array $options = [], int $concurrency = 4): array
     {
         $results = [];
+
         if (!$urls instanceof \Generator) {
             $urls = $this->requestGenerator($method, $urls, $options);
         }
-        each_limit_all($urls, $concurrency, static function ($response, $index) use (&$results) {
-            $results[$index] = $response;
-        })->wait();
+        each_limit_all(
+            $urls,
+            $concurrency,
+            static function ($response, $index) use (&$results): void {
+                $results[$index] = $response;
+            }
+        )->wait();
 
         return $results;
     }

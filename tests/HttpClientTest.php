@@ -1,6 +1,7 @@
 <?php
 
 /** @noinspection PhpUnusedParameterInspection */
+
 declare(strict_types=1);
 
 namespace Nelexa\HttpClient\Tests;
@@ -20,30 +21,38 @@ use Symfony\Component\Cache\Psr16Cache;
 
 /**
  * @internal
+ *
+ * @small
  */
 final class HttpClientTest extends TestCase
 {
     public function testConfig(): void
     {
         $client = new HttpClient();
-        $this->assertArrayHasKey('Accept-Language', $client->getConfig()[Options::HEADERS]);
+        self::assertArrayHasKey('Accept-Language', $client->getConfig()[Options::HEADERS]);
 
         $client
             ->setHttpHeader('DNT', '1')
-            ->setHttpHeader('User-Agent', 'Mozilla/5.0 (Linux; Android 4.4.2; Nexus 4 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.114 Mobile Safari/537.36')
+            ->setHttpHeader(
+                'User-Agent',
+                'Mozilla/5.0 (Linux; Android 4.4.2; Nexus 4 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.114 Mobile Safari/537.36'
+            )
             ->setHttpHeader('Accept-Language', null)
             ->setProxy('socks5://127.0.0.1:9050')
         ;
 
         $config = $client->getConfig();
-        $this->assertSame($config[Options::HEADERS]['DNT'], '1');
-        $this->assertSame($config[Options::HEADERS]['User-Agent'], 'Mozilla/5.0 (Linux; Android 4.4.2; Nexus 4 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.114 Mobile Safari/537.36');
-        $this->assertArrayNotHasKey('Accept-Language', $config[Options::HEADERS]);
-        $this->assertSame($config[Options::PROXY], 'socks5://127.0.0.1:9050');
+        self::assertSame($config[Options::HEADERS]['DNT'], '1');
+        self::assertSame(
+            $config[Options::HEADERS]['User-Agent'],
+            'Mozilla/5.0 (Linux; Android 4.4.2; Nexus 4 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.114 Mobile Safari/537.36'
+        );
+        self::assertArrayNotHasKey('Accept-Language', $config[Options::HEADERS]);
+        self::assertSame($config[Options::PROXY], 'socks5://127.0.0.1:9050');
 
         $ttl = \DateInterval::createFromDateString('5 min');
         $client->setCacheTtl($ttl);
-        $this->assertSame($client->getConfig(Options::CACHE_TTL), $ttl);
+        self::assertSame($client->getConfig(Options::CACHE_TTL), $ttl);
     }
 
     public function testException(): void
@@ -55,11 +64,11 @@ final class HttpClientTest extends TestCase
         try {
             $client->request('GET', $url);
         } catch (ServerException $e) {
-            $this->assertNotNull($e->getResponse());
-            $this->assertSame($e->getResponse()->getStatusCode(), $httpCode);
+            self::assertNotNull($e->getResponse());
+            self::assertSame($e->getResponse()->getStatusCode(), $httpCode);
             $contents = $e->getResponse()->getBody()->getContents();
-            $this->assertEmpty($contents);
-            $this->assertSame((string)$e->getRequest()->getUri(), $url);
+            self::assertEmpty($contents);
+            self::assertSame((string) $e->getRequest()->getUri(), $url);
         }
     }
 
@@ -69,9 +78,13 @@ final class HttpClientTest extends TestCase
         $this->expectExceptionMessage("'handler_response' option is not callable");
 
         $client = new HttpClient();
-        $client->request('GET', 'https://httpbin.org/status/200', [
-            Options::HANDLER_RESPONSE => '_no_callable_',
-        ]);
+        $client->request(
+            'GET',
+            'https://httpbin.org/status/200',
+            [
+                Options::HANDLER_RESPONSE => '_no_callable_',
+            ]
+        );
     }
 
     public function testRetryLimit(): void
@@ -79,20 +92,26 @@ final class HttpClientTest extends TestCase
         $retryLimit = 2;
 
         $count = 0;
-        $client = new HttpClient([
-            HttpClient::OPTION_RETRY_LIMIT => $retryLimit,
-            Options::HTTP_ERRORS => false,
-        ]);
+        $client = new HttpClient(
+            [
+                HttpClient::OPTION_RETRY_LIMIT => $retryLimit,
+                Options::HTTP_ERRORS => false,
+            ]
+        );
 
-        $client->request('GET', 'https://httpbin.org/status/500', [
-            Options::ON_STATS => static function (TransferStats $stats) use (&$count) {
-                $response = $stats->getResponse();
-                self::assertNotNull($response);
-                self::assertEquals($response->getStatusCode(), 500);
-                $count++;
-            },
-        ]);
-        $this->assertEquals($count, $retryLimit + 1);
+        $client->request(
+            'GET',
+            'https://httpbin.org/status/500',
+            [
+                Options::ON_STATS => static function (TransferStats $stats) use (&$count): void {
+                    $response = $stats->getResponse();
+                    self::assertNotNull($response);
+                    self::assertEquals($response->getStatusCode(), 500);
+                    $count++;
+                },
+            ]
+        );
+        self::assertEquals($count, $retryLimit + 1);
     }
 
     public function testRetryLimitConnectException(): void
@@ -100,22 +119,28 @@ final class HttpClientTest extends TestCase
         $retryLimit = 1;
 
         $count = 0;
-        $client = new HttpClient([
-            HttpClient::OPTION_RETRY_LIMIT => $retryLimit,
-        ]);
+        $client = new HttpClient(
+            [
+                HttpClient::OPTION_RETRY_LIMIT => $retryLimit,
+            ]
+        );
 
         try {
-            $client->request('GET', 'https://httpbin.org/delay/3', [
-                Options::TIMEOUT => 1,
-                Options::ON_STATS => static function () use (&$count) {
-                    $count++;
-                },
-            ]);
-            $this->fail('an exception was expected ' . ConnectException::class);
+            $client->request(
+                'GET',
+                'https://httpbin.org/delay/3',
+                [
+                    Options::TIMEOUT => 1,
+                    Options::ON_STATS => static function () use (&$count): void {
+                        $count++;
+                    },
+                ]
+            );
+            self::fail('an exception was expected ' . ConnectException::class);
         } catch (\Throwable $e) {
-            $this->assertInstanceOf(ConnectException::class, $e);
+            self::assertInstanceOf(ConnectException::class, $e);
         }
-        $this->assertEquals($count, $retryLimit + 1);
+        self::assertEquals($count, $retryLimit + 1);
     }
 
     public function testSetInvalidTtlCache(): void
@@ -131,7 +156,7 @@ final class HttpClientTest extends TestCase
     {
         $client = new HttpClient();
         $client->setTimeout(300.300);
-        $this->assertSame(300.300, $client->getConfig()[Options::TIMEOUT]);
+        self::assertSame(300.300, $client->getConfig()[Options::TIMEOUT]);
     }
 
     public function testSetInvalidTimeout(): void
@@ -147,7 +172,7 @@ final class HttpClientTest extends TestCase
     {
         $client = new HttpClient();
         $client->setConnectTimeout(300.300);
-        $this->assertSame(300.300, $client->getConfig()[Options::CONNECT_TIMEOUT]);
+        self::assertSame(300.300, $client->getConfig()[Options::CONNECT_TIMEOUT]);
     }
 
     public function testSetInvalidConnectTimeout(): void
@@ -172,10 +197,10 @@ final class HttpClientTest extends TestCase
         };
 
         $debug = $client->getConfig(Options::DEBUG) ?? false;
-        $this->assertFalse($debug);
+        self::assertFalse($debug);
 
         $client->setDebug(true);
-        $this->assertTrue($client->getConfig(Options::DEBUG));
+        self::assertTrue($client->getConfig(Options::DEBUG));
     }
 
     public function testCacheResponse(): void
@@ -185,25 +210,31 @@ final class HttpClientTest extends TestCase
         $requestCacheUUID = static function () use ($cache) {
             $client = new HttpClient([], $cache);
 
-            return $client->get('https://httpbin.org/uuid', [
-                Options::HEADERS => [
-                    'Accept' => 'application/json',
-                ],
-                Options::CACHE_TTL => \DateInterval::createFromDateString('2 second'),
-                Options::HANDLER_RESPONSE => static function (RequestInterface $request, ResponseInterface $response) {
-                    $contents = $response->getBody()->getContents();
-                    $json = \GuzzleHttp\json_decode($contents, true);
+            return $client->get(
+                'https://httpbin.org/uuid',
+                [
+                    Options::HEADERS => [
+                        'Accept' => 'application/json',
+                    ],
+                    Options::CACHE_TTL => \DateInterval::createFromDateString('2 second'),
+                    Options::HANDLER_RESPONSE => static function (
+                        RequestInterface $request,
+                        ResponseInterface $response
+                    ) {
+                        $contents = $response->getBody()->getContents();
+                        $json = \GuzzleHttp\json_decode($contents, true);
 
-                    return $json['uuid'];
-                },
-            ]);
+                        return $json['uuid'];
+                    },
+                ]
+            );
         };
 
         $uuid = $requestCacheUUID();
-        $this->assertSame($requestCacheUUID(), $uuid);
+        self::assertSame($requestCacheUUID(), $uuid);
 
         sleep(2);
-        $this->assertNotSame($requestCacheUUID(), $uuid);
+        self::assertNotSame($requestCacheUUID(), $uuid);
     }
 
     public function testRequestAsyncPool(): void
@@ -220,41 +251,60 @@ final class HttpClientTest extends TestCase
 
         $client = new HttpClient();
         $userAgent = 'Test-Agent';
-        $response = $client->requestAsyncPool('GET', $urls, [
-            Options::HEADERS => [
-                'User-Agent' => $userAgent,
+        $response = $client->requestAsyncPool(
+            'GET',
+            $urls,
+            [
+                Options::HEADERS => [
+                    'User-Agent' => $userAgent,
+                ],
+                Options::HANDLER_RESPONSE => static function (RequestInterface $request, ResponseInterface $response) {
+                    return $response->getBody()->getContents();
+                },
             ],
-            Options::HANDLER_RESPONSE => static function (RequestInterface $request, ResponseInterface $response) {
-                return $response->getBody()->getContents();
-            },
-        ], $concurrency);
+            $concurrency
+        );
 
-        $this->assertArrayHasKey('uuid', $response);
-        $this->assertArrayHasKey('bytes', $response);
-        $this->assertArrayHasKey('base64', $response);
-        $this->assertArrayHasKey(0, $response);
+        self::assertArrayHasKey('uuid', $response);
+        self::assertArrayHasKey('bytes', $response);
+        self::assertArrayHasKey('base64', $response);
+        self::assertArrayHasKey(0, $response);
     }
 
     public function testHandlerStack(): void
     {
         $stack = HandlerStack::create();
-        $stack->unshift(Middleware::mapRequest(static function (RequestInterface $r) {
-            return $r->withHeader('X-Foo', 'Bar');
-        }, 'add_foo'));
+        $stack->unshift(
+            Middleware::mapRequest(
+                static function (RequestInterface $r) {
+                    return $r->withHeader('X-Foo', 'Bar');
+                }
+            ),
+            'add_foo'
+        );
 
-        $client = new HttpClient([
-            HttpClient::OPTION_HANDLER => $stack,
-        ]);
+        $client = new HttpClient(
+            [
+                HttpClient::OPTION_HANDLER => $stack,
+            ]
+        );
 
-        $client->request('GET', 'https://httpbin.org/headers', [
-            Options::HANDLER_RESPONSE => static function (RequestInterface $request, ResponseInterface $response) {
-                self::assertArrayHasKey('X-Foo', $request->getHeaders());
-                self::assertSame($request->getHeaders()['X-Foo'], ['Bar']);
+        $client->request(
+            'GET',
+            'https://httpbin.org/headers',
+            [
+                Options::HANDLER_RESPONSE => static function (
+                    RequestInterface $request,
+                    ResponseInterface $response
+                ): void {
+                    self::assertArrayHasKey('X-Foo', $request->getHeaders());
+                    self::assertSame($request->getHeaders()['X-Foo'], ['Bar']);
 
-                $contents = $response->getBody()->getContents();
-                $json = \GuzzleHttp\json_decode($contents, true);
-                self::assertSame($json['headers']['X-Foo'], 'Bar');
-            },
-        ]);
+                    $contents = $response->getBody()->getContents();
+                    $json = \GuzzleHttp\json_decode($contents, true);
+                    self::assertSame($json['headers']['X-Foo'], 'Bar');
+                },
+            ]
+        );
     }
 }

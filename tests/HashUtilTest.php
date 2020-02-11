@@ -1,6 +1,7 @@
 <?php
+
 /** @noinspection PhpUnusedParameterInspection */
-/** @noinspection PhpMultipleClassesDeclarationsInOneFile */
+
 declare(strict_types=1);
 
 namespace Nelexa\HttpClient\Tests;
@@ -13,6 +14,8 @@ use Psr\Http\Message\ResponseInterface;
 
 /**
  * @internal
+ *
+ * @small
  */
 final class HashUtilTest extends TestCase
 {
@@ -55,11 +58,11 @@ final class HashUtilTest extends TestCase
         ];
 
         foreach ($hashes as $hash) {
-            $this->assertNotEmpty($hash);
-            $this->assertRegExp('/^[\da-f]{8}$/', $hash);
+            self::assertNotEmpty($hash);
+            self::assertRegExp('/^[\da-f]{8}$/', $hash);
         }
 
-        $this->assertSame($hashes['[__CLASS__, callableStaticMethod]'], $hashes['__CLASS__::callableStaticMethod']);
+        self::assertSame($hashes['[__CLASS__, callableStaticMethod]'], $hashes['__CLASS__::callableStaticMethod']);
     }
 
     /**
@@ -74,7 +77,7 @@ final class HashUtilTest extends TestCase
         $hash = HashUtil::hashCallable($func);
         $hash2 = HashUtil::hashCallable($func);
 
-        $this->assertSame($hash, $hash2);
+        self::assertSame($hash, $hash2);
 
         return $hash;
     }
