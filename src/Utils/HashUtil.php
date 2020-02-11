@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Nelexa\HttpClient\Utils;
@@ -22,7 +23,8 @@ final class HashUtil
     {
         $ctx = hash_init($hashAlgo);
         hash_update($ctx, $request->getMethod());
-        hash_update($ctx, (string)$request->getUri());
+        hash_update($ctx, (string) $request->getUri());
+
         foreach ($request->getHeaders() as $name => $header) {
             hash_update($ctx, $name . ': ' . implode(', ', $header));
         }
@@ -79,35 +81,40 @@ final class HashUtil
     {
         static $hashes;
 
-        if (null === $hashes) {
+        if ($hashes === null) {
             $hashes = new \SplObjectStorage();
         }
 
         if (!isset($hashes[$func])) {
             $hashContents = false;
+
             if ($func instanceof \Closure) {
                 $ref = new \ReflectionFunction($func);
                 $hashContents = true;
             } else {
                 $ref = new \ReflectionClass($func);
+
                 if ($ref->isAnonymous()) {
                     $hashContents = true;
                 }
             }
 
             $ctx = hash_init($hashAlgo);
+
             if ($ref->isUserDefined()) {
                 if ($hashContents) {
                     $file = new \SplFileObject($ref->getFileName());
                     $file->seek($ref->getStartLine() - 1);
+
                     while ($file->key() < $ref->getEndLine()) {
                         hash_update($ctx, $file->current());
                         $file->next();
                     }
                 } else {
-                    hash_update($ctx,
-                        $ref->getName() . PHP_EOL .
-                        $ref->getFileName() . PHP_EOL .
+                    hash_update(
+                        $ctx,
+                        $ref->getName() . \PHP_EOL .
+                        $ref->getFileName() . \PHP_EOL .
                         filemtime($ref->getFileName())
                     );
                 }
@@ -117,7 +124,7 @@ final class HashUtil
             $hashes[$func] = hash_final($ctx);
         }
 
-        return (string)$hashes[$func];
+        return (string) $hashes[$func];
     }
 
     /**
@@ -132,8 +139,10 @@ final class HashUtil
 
         if (!isset($hashes[$ref->getName()])) {
             if ($ref->isUserDefined()) {
-                $hashes[$ref->getName()] = hash($hashAlgo, $ref->getName() . PHP_EOL .
-                    $ref->getFileName() . PHP_EOL .
+                $hashes[$ref->getName()] = hash(
+                    $hashAlgo,
+                    $ref->getName() . \PHP_EOL .
+                    $ref->getFileName() . \PHP_EOL .
                     filemtime($ref->getFileName())
                 );
             } else {

@@ -103,8 +103,6 @@ class Api
     /**
      * Fetch uuid.
      *
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     *
      * @return string
      */
     public function fetchUUID(): string
@@ -123,10 +121,10 @@ class Api
     }
 }
 
-$redis = new \Redis();
-$redis->connect('localhost');
 $cache = new \Symfony\Component\Cache\Psr16Cache(
-    new \Symfony\Component\Cache\Adapter\RedisAdapter($redis)
+    new \Symfony\Component\Cache\Adapter\RedisAdapter(
+        \Symfony\Component\Cache\Adapter\RedisAdapter::createConnection('redis://localhost')
+    )
 );
 
 $api = new Api($cache);
