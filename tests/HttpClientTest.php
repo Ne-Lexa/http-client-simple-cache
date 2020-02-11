@@ -1,10 +1,11 @@
 <?php
+
+/** @noinspection PhpUnusedParameterInspection */
 declare(strict_types=1);
 
 namespace Nelexa\HttpClient\Tests;
 
 use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
@@ -53,7 +54,7 @@ final class HttpClientTest extends TestCase
 
         try {
             $client->request('GET', $url);
-        } catch (GuzzleException | ServerException $e) {
+        } catch (ServerException $e) {
             $this->assertNotNull($e->getResponse());
             $this->assertSame($e->getResponse()->getStatusCode(), $httpCode);
             $contents = $e->getResponse()->getBody()->getContents();
@@ -62,9 +63,6 @@ final class HttpClientTest extends TestCase
         }
     }
 
-    /**
-     * @throws GuzzleException
-     */
     public function testInvalidHandlerResponseOption(): void
     {
         $this->expectException(\RuntimeException::class);
@@ -83,19 +81,17 @@ final class HttpClientTest extends TestCase
         $count = 0;
         $client = new HttpClient([
             HttpClient::OPTION_RETRY_LIMIT => $retryLimit,
+            Options::HTTP_ERRORS => false,
         ]);
 
-        try {
-            $client->request('GET', 'https://httpbin.org/status/500', [
-                Options::ON_STATS => static function (TransferStats $stats) use (&$count) {
-                    $response = $stats->getResponse();
-                    self::assertNotNull($response);
-                    self::assertEquals($response->getStatusCode(), 500);
-                    $count++;
-                },
-            ]);
-        } catch (GuzzleException $e) {
-        }
+        $client->request('GET', 'https://httpbin.org/status/500', [
+            Options::ON_STATS => static function (TransferStats $stats) use (&$count) {
+                $response = $stats->getResponse();
+                self::assertNotNull($response);
+                self::assertEquals($response->getStatusCode(), 500);
+                $count++;
+            },
+        ]);
         $this->assertEquals($count, $retryLimit + 1);
     }
 
@@ -116,7 +112,7 @@ final class HttpClientTest extends TestCase
                 },
             ]);
             $this->fail('an exception was expected ' . ConnectException::class);
-        } catch (GuzzleException $e) {
+        } catch (\Throwable $e) {
             $this->assertInstanceOf(ConnectException::class, $e);
         }
         $this->assertEquals($count, $retryLimit + 1);
@@ -210,9 +206,6 @@ final class HttpClientTest extends TestCase
         $this->assertNotSame($requestCacheUUID(), $uuid);
     }
 
-    /**
-     * @throws GuzzleException
-     */
     public function testRequestAsyncPool(): void
     {
         $urls = [
@@ -242,9 +235,6 @@ final class HttpClientTest extends TestCase
         $this->assertArrayHasKey(0, $response);
     }
 
-    /**
-     * @throws GuzzleException
-     */
     public function testHandlerStack(): void
     {
         $stack = HandlerStack::create();

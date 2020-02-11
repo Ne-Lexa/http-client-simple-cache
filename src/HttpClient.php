@@ -6,7 +6,6 @@ namespace Nelexa\HttpClient;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
@@ -79,9 +78,8 @@ class HttpClient extends Client
 
         $config = array_replace_recursive([
             self::OPTION_HANDLER => $handlerStack,
-            Options::TIMEOUT => 5.0,
             Options::HEADERS => [
-                'User-Agent' => 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0',
+                'User-Agent' => 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0',
                 'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Accept-Language' => 'en',
                 'Accept-Encoding' => 'gzip, deflate',
@@ -126,7 +124,7 @@ class HttpClient extends Client
                     if (!isset($options[Options::CACHE_KEY])) {
                         $options[Options::CACHE_KEY] = sprintf(
                             self::CACHE_KEY,
-                            HashUtil::hashCallable($handler),
+                            HashUtil::hashCallable($options[Options::HANDLER_RESPONSE]),
                             HashUtil::getRequestHash($request)
                         );
                     }
@@ -315,8 +313,6 @@ class HttpClient extends Client
      * @param iterable $urls
      * @param array    $options
      * @param int      $concurrency
-     *
-     * @throws GuzzleException
      *
      * @return array
      */
