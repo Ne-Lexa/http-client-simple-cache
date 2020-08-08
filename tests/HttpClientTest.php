@@ -7,9 +7,11 @@ declare(strict_types=1);
 namespace Nelexa\HttpClient\Tests;
 
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
+use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\TransferStats;
 use Nelexa\HttpClient\HttpClient;
 use Nelexa\HttpClient\Options;
@@ -269,6 +271,99 @@ final class HttpClientTest extends TestCase
         self::assertArrayHasKey('bytes', $response);
         self::assertArrayHasKey('base64', $response);
         self::assertArrayHasKey(0, $response);
+    }
+
+    public function testRequestAsyncPoolWithReject(): void
+    {
+        $urls = [
+            'uuid' => 'https://httpbin.org/uuid',
+            'bytes' => 'https://httpbin.org/bytes/30',
+            'error_404' => 'https://httpbin.org/status/404',
+            'error_500' => 'https://httpbin.org/status/500',
+            'base64' => 'https://httpbin.org/base64/' . rawurlencode(base64_encode('test string')),
+            // 0 =>
+            'https://httpbin.org/user-agent',
+        ];
+        $errorsExpected = [
+            'error_404' => 404,
+            'error_500' => 500,
+        ];
+
+        $concurrency = 2;
+
+        $client = new HttpClient();
+        $userAgent = 'Test-Agent';
+        $response = $client->requestAsyncPool(
+            'GET',
+            $urls,
+            [
+                Options::HEADERS => [
+                    'User-Agent' => $userAgent,
+                ],
+                Options::HANDLER_RESPONSE => static function (RequestInterface $request, ResponseInterface $response) {
+                    return $response->getBody()->getContents();
+                },
+            ],
+            $concurrency,
+            /**
+             * @param \Throwable|RequestException $reason
+             * @param string|int                  $idx
+             * @param PromiseInterface            $aggregate
+             */
+            static function (\Throwable $reason, $idx, PromiseInterface $aggregate) use ($errorsExpected): void {
+                self::assertInstanceOf(RequestException::class, $reason);
+                $response = $reason->getResponse();
+                self::assertNotNull($response);
+                self::assertArrayHasKey($idx, $errorsExpected);
+                self::assertSame($errorsExpected[$idx], $response->getStatusCode());
+//                if ($reject === null) {
+//                    $aggregate->reject($reason);
+//                } else {
+//                    $reject($idx, $reason);
+//                }
+            }
+        );
+
+        self::assertArrayHasKey('uuid', $response);
+        self::assertArrayHasKey('bytes', $response);
+        self::assertArrayHasKey('base64', $response);
+        self::assertArrayHasKey(0, $response);
+    }
+
+    public function testRequestAsyncPoolDoReject(): void
+    {
+        $this->expectException(RequestException::class);
+
+        $urls = [
+            'error_404' => 'https://httpbin.org/status/404',
+            'error_500' => 'https://httpbin.org/status/500',
+        ];
+
+        $concurrency = 2;
+
+        $client = new HttpClient();
+        $userAgent = 'Test-Agent';
+        $client->requestAsyncPool(
+            'GET',
+            $urls,
+            [
+                Options::HEADERS => [
+                    'User-Agent' => $userAgent,
+                ],
+                Options::HANDLER_RESPONSE => static function (RequestInterface $request, ResponseInterface $response) {
+                    return $response->getBody()->getContents();
+                },
+            ],
+            $concurrency,
+            /**
+             * @param \Throwable|RequestException $reason
+             * @param string|int                  $idx
+             * @param PromiseInterface            $aggregate
+             */
+            static function (\Throwable $reason, $idx, PromiseInterface $aggregate): void {
+                $aggregate->reject($reason);
+            }
+        );
     }
 
     public function testHandlerStack(): void

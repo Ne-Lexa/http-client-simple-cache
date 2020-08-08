@@ -13,6 +13,7 @@ use Nelexa\HttpClient\Utils\HashUtil;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\SimpleCache\CacheInterface;
+use function GuzzleHttp\Promise\each_limit;
 use function GuzzleHttp\Promise\each_limit_all;
 
 /**
@@ -314,27 +315,40 @@ class HttpClient extends Client
     }
 
     /**
-     * @param string   $method
-     * @param iterable $urls
-     * @param array    $options
-     * @param int      $concurrency
+     * @param string        $method
+     * @param iterable      $urls
+     * @param array         $options
+     * @param int           $concurrency
+     * @param callable|null $onRejected
      *
      * @return array
      */
-    public function requestAsyncPool(string $method, iterable $urls, array $options = [], int $concurrency = 4): array
+    public function requestAsyncPool(string $method, iterable $urls, array $options = [], int $concurrency = 4, ?callable $onRejected = null): array
     {
         $results = [];
 
         if (!$urls instanceof \Generator) {
             $urls = $this->requestGenerator($method, $urls, $options);
         }
-        each_limit_all(
-            $urls,
-            $concurrency,
-            static function ($response, $index) use (&$results): void {
-                $results[$index] = $response;
-            }
-        )->wait();
+
+        if ($onRejected === null) {
+            each_limit_all(
+                $urls,
+                $concurrency,
+                static function ($response, $index) use (&$results): void {
+                    $results[$index] = $response;
+                }
+            )->wait();
+        } else {
+            each_limit(
+                $urls,
+                $concurrency,
+                static function ($response, $index) use (&$results): void {
+                    $results[$index] = $response;
+                },
+                $onRejected
+            )->wait();
+        }
 
         return $results;
     }
