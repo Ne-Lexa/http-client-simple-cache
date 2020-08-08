@@ -59,7 +59,17 @@ final class HashUtilTest extends TestCase
 
         foreach ($hashes as $hash) {
             self::assertNotEmpty($hash);
-            self::assertRegExp('/^[\da-f]{8}$/', $hash);
+
+            if (method_exists($this, 'assertMatchesRegularExpression')) {
+                /**
+                 * @noinspection PhpUndefinedMethodInspection
+                 * @noinspection RedundantSuppression
+                 */
+                self::assertMatchesRegularExpression('/^[\da-f]{8}$/', $hash);
+            } else {
+                /** @noinspection PhpDeprecationInspection */
+                self::assertRegExp('/^[\da-f]{8}$/', $hash);
+            }
         }
 
         self::assertSame($hashes['[__CLASS__, callableStaticMethod]'], $hashes['__CLASS__::callableStaticMethod']);
